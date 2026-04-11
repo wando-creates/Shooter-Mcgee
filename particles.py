@@ -12,7 +12,7 @@ class Collision:
         self.velocity = pygame.math.Vector2(math.cos(angle) * speed,
                                             math.sin(angle) * speed)
         
-        self.radius = random.randint(2,4)
+        self.radius = random.randint(1,2)
         self.life = 30
         self.colour = (255,200,50)
     

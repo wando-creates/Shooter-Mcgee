@@ -11,7 +11,7 @@ class Bullet:
         if direction.length() > 0:
             direction = direction.normalize()
 
-        self.speed = 4
+        self.speed = 10
         self.velocity = direction * self.speed
 
         self.radius = 2

@@ -4,7 +4,7 @@ import math
 class Player:
     def __init__(self, x, y):
         self.pos = pygame.math.Vector2(x,y)
-        self.speed = 0.4
+        self.speed = 4
         self.colour = (0,150,200)
         self.size = 20
 
