@@ -7,7 +7,7 @@ class Enemy:
         self.pos = pygame.math.Vector2(x, y)
         self.speed = 1
         self.radius = 15
-        self.colour = (200, 100, 50)
+        self.colour = (250, 0, 50)
 
     def update(self, player_pos):
         direction = player_pos - self.pos
@@ -17,5 +17,5 @@ class Enemy:
         
         self.pos += direction * self.speed
     
-    def draw(self, screen):
-        pygame.draw.circle(screen, self.colour, (int(self.pos.x), int(self.pos.y)), self.radius)
+    def draw(self, screen, offset_x=0, offset_y=0):
+        pygame.draw.circle(screen, self.colour, (int(self.pos.x + offset_x), int(self.pos.y + offset_y)), self.radius)

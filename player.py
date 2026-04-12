@@ -27,16 +27,16 @@ class Player:
         
         self.pos += direction * self.speed
 
-    def draw(self, screen):
+    def draw(self, screen, offset_x=0, offset_y=0):
         mouse_x, mouse_y = pygame.mouse.get_pos()
         angle = math.atan2(mouse_y - self.pos.y, mouse_x - self.pos.x)
 
-        tip = (self.pos.x + math.cos(angle) * self.size,
-               self.pos.y + math.sin(angle) * self.size)
-        left = (self.pos.x + math.cos(angle + 2.5) * self.size,
-                self.pos.y + math.sin(angle + 2.5) * self.size)
-        right = (self.pos.x + math.cos(angle - 2.5) * self.size,
-                 self.pos.y + math.sin(angle - 2.5) * self.size)
+        tip = (self.pos.x + math.cos(angle) * self.size + offset_x,
+               self.pos.y + math.sin(angle) * self.size + offset_y)
+        left = (self.pos.x + math.cos(angle + 2.5) * self.size + offset_x,
+                self.pos.y + math.sin(angle + 2.5) * self.size + offset_y)
+        right = (self.pos.x + math.cos(angle - 2.5) * self.size + offset_x,
+                 self.pos.y + math.sin(angle - 2.5) * self.size + offset_y)
         
 
         pygame.draw.polygon(screen, self.colour, [tip, left, right])

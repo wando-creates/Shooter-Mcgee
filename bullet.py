@@ -20,8 +20,8 @@ class Bullet:
     def update(self):
         self.pos += self.velocity
     
-    def draw(self, screen):
-        pygame.draw.circle(screen, self.colour, (int(self.pos.x), int(self.pos.y)), self.radius)
+    def draw(self, screen, offset_x=0, offset_y=0):
+        pygame.draw.circle(screen, self.colour, (int(self.pos.x + offset_x), int(self.pos.y + offset_y)), self.radius)
 
     def hit_wall(self, width, height):
         return (self.pos.x <= 0 or self.pos.x >= width or

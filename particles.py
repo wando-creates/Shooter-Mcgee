@@ -20,9 +20,9 @@ class Collision:
         self.pos += self.velocity
         self.life -= 1
     
-    def draw(self, screen):
+    def draw(self, screen, offset_x=0, offset_y=0):
         if self.life > 0:
-            pygame.draw.circle(screen, self.colour, (int(self.pos.x), int(self.pos.y)), self.radius)
+            pygame.draw.circle(screen, self.colour, (int(self.pos.x + offset_x), int(self.pos.y + offset_y)), self.radius)
 
     def is_dead(self):
         return self.life <= 0
