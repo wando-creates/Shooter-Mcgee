@@ -5,7 +5,7 @@ class Popup:
         self.pos = pygame.math.Vector2(x, y)
         self.text = text
 
-        self.font = pygame.font.SysFont(None, 28)
+        self.font = pygame.font.Font("fonts/LuckiestGuy-Regular.ttf", 22)
         self.life = 60
         self.velocity = pygame.math.Vector2(0, -1)
         self.colour = (220,220,220)

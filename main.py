@@ -16,6 +16,7 @@ WIDTH, HEIGHT = 800, 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Shooter Mcgee")
 vignette = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+font = pygame.font.Font("fonts/LuckiestGuy-Regular.ttf", 32)
 
 player = Player(WIDTH//2, HEIGHT//2)
 bullets = []
@@ -27,6 +28,10 @@ shake_strength = 0
 wave =1
 wave_timer = 0
 wave_delay = 120
+wave_score = 0
+score = 1
+score_scale = 1
+display_score = 0
 
 def create_vignette(surface):
     width, height = surface.get_size()
@@ -44,14 +49,12 @@ def create_vignette(surface):
 def spawn_wave(wave):
     new_enemies = []
 
-    speed = 1 + wave * 0.2
-    health = 1 + wave // 3
-
     for _ in range(wave * 3):
         x = random.choice([0, WIDTH])
         y = random.randint (0, HEIGHT)
 
-        new_enemies.append(Enemy(x, y))
+        health = random.randint(1, min(3, wave))
+        new_enemies.append(Enemy(x, y, health))
     return new_enemies
 
 #Main loop
@@ -63,7 +66,10 @@ while running:
     if not wave_in_progress:
         wave_timer += 1
         if wave_timer >= wave_delay:
-            popups.append(Popup(WIDTH//2 - 25, HEIGHT-500, f"WAVE: {wave}"))
+            wave_score += wave * 50
+            popups.append(Popup(WIDTH//2 - 36, HEIGHT-500, f"ROUND: {wave}"))
+            popups.append(Popup(WIDTH//2 - 36, HEIGHT-450, f"+ {wave_score}"))
+            score += wave_score
             enemies = spawn_wave(wave)
             wave_in_progress = True
             wave_timer = 0
@@ -107,14 +113,27 @@ while running:
 
         for bullet in bullets:
             if bullet.pos.distance_to(enemy.pos) < enemy.radius:
-                shake_strength = 8
+                enemy.health -= 1
+                bullets.remove(bullet)
+                if enemy.health >=1:
+                    score += 1
+                    popups.append(Popup(enemy.pos.x, enemy.pos.y, "+1"))
 
-                for _ in range(12):
+                for _ in range(8):
                     particles.append(Collision(enemy.pos.x, enemy.pos.y))
 
-                popups.append(Popup(enemy.pos.x, enemy.pos.y, "+100"))
-                hit = True
+                if enemy.health <= 0:
+                    shake_strength = 8
+                    for _ in range(12): 
+                        particles.append(Collision(enemy.pos.x, enemy.pos.y))
+
+                    popups.append(Popup(enemy.pos.x, enemy.pos.y, "+1"))
+                    score += 1
+                    score_scale = 1.5
+
+                    hit = True
                 break
+        
         if not hit:
             new_enemies.append(enemy)
 
@@ -145,6 +164,10 @@ while running:
     offset_x = random.uniform(-shake_strength, shake_strength)
     offset_y = random.uniform(-shake_strength, shake_strength)
 
+#------Score------
+    display_score += (score - display_score) * 0.1
+    score_scale += (1 - score_scale) * 0.1
+
 #------Drawing------
     screen.fill((30,30,30))
 
@@ -161,7 +184,14 @@ while running:
     for popup in popups:
         popup.draw(screen)
 
+    pygame.draw.rect(screen, (20,20,20), (5,5,180,100), border_radius=8)
+    pygame.draw.rect(screen, (200,200,200), (5,5,180,100), 2, border_radius=8)
     screen.blit(vignette, (0,0))
+
+    score_text = font.render(f"Cash: {int(display_score)}", True, (200,200,200))
+    scaled_text = pygame.transform.scale(score_text, (int(score_text.get_width() * score_scale), int(score_text.get_height() * score_scale)))
+
+    screen.blit(scaled_text, (10,10))
 
     shake_strength *= 0.9
     pygame.display.flip()
