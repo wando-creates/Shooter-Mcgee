@@ -3,7 +3,7 @@ import pygame
 import math
 
 class Bullet:
-    def __init__(self, x, y, target_x, target_y):
+    def __init__(self, x, y, target_x, target_y, homing=False):
         self.pos = pygame.math.Vector2(x,y)
 
         direction = pygame.math.Vector2(target_x - x, target_y - y)
@@ -15,8 +15,24 @@ class Bullet:
         self.velocity = direction * self.speed
 
         self.angle = math.atan2(direction.y, direction.x)
+        self.homing = homing
 
-    def update(self):
+    def update(self, enemies=None):
+        if self.homing and enemies:
+            nearest, best_d = None, float("inf")
+            for e in enemies:
+                d = (e.pos - self.pos).length()
+                if d < best_d:
+                    best_d, nearest = d, e
+            
+            if nearest and best_d < 500:
+                desired = (nearest.pos - self.pos).normalize() * self.speed
+                self.velocity += (desired - self.velocity) * 0.1
+
+                if self.velocity.length() > self.speed:
+                    self.velocity = self.velocity.normalize() * self.speed
+                self.angle = math.atan2(self.velocity.y, self.velocity.x)
+
         self.pos += self.velocity
     
     def draw(self, screen, offset_x=0, offset_y=0):

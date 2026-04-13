@@ -1,5 +1,6 @@
 import pygame
 import math
+from bullet import Bullet
 
 class Player:
     def __init__(self, x, y):
@@ -7,15 +8,33 @@ class Player:
         self.speed = 4
         self.colour = (0,150,200)
         self.size = 20
-
+        self.score = 1
         self.trail = []
         self.trail_length = 15
-
         self.angle = 0
+        self.shoot_timer = 0
+        self.shoot_delay = 30
+        self.path_choice = None
+        self.multishot = 1
+        self.homing = False
+
+        self.path_tiers = {"A": 0, "B": 0}
+
+    def shoot(self, bullets, mouse_x, mouse_y):
+        base_angle = math.atan2(mouse_y - self.pos.y, mouse_x - self.pos.x)
+        spread = 15
+        for i in range(self.multishot):
+            offset = (i - (self.multishot -1) / 2) * spread
+            rad = base_angle + math.radians(offset)
+            tx = self.pos.x + math.cos(rad) * 200
+            ty = self.pos.y + math.sin(rad) * 200
+            bullets.append(Bullet(self.pos.x, self.pos.y, tx, ty, homing=self.homing))
 
     def update(self):
         keys = pygame.key.get_pressed()
         direction = pygame.math.Vector2(0,0)
+
+        self.shoot_timer += 1
 
         if keys[pygame.K_w]:
             direction.y -= 1
@@ -41,7 +60,7 @@ class Player:
         else:
             if self.trail:
                 self.trail.pop(0)
-                
+
         if len(self.trail) > self.trail_length:
             self.trail.pop(0)
 

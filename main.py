@@ -6,7 +6,7 @@ from enemy import Enemy
 from bullet import Bullet
 from particles import Collision
 from popups import Popup
-
+from upgrades import paths, apply_upgrade
 pygame.init()
 pygame.mixer.init()
 
@@ -41,14 +41,10 @@ wave_score = 0
 score = 1
 score_scale = 1
 display_score = 0
-shop_timer = 0
-shop_delay = 120
-going_to_shop = False
+
 
 damage = 1
 
-shop_buttons = [{"rect": pygame.Rect(100,200,250,60), "text": "Damage +1", "cost": 100, "action": "damage"},
-                {"rect": pygame.Rect(100,280,250,60), "text": "Speed +0.2", "cost": 100, "action": "speed"}]
 
 def create_vignette(surface):
     width, height = surface.get_size()
@@ -77,21 +73,8 @@ def spawn_wave(wave):
 
     return new_enemies
 
-def handle_shop_click(pos):
-    global score, damage
 
-    for button in shop_buttons:
-        if button["rect"].collidepoint(pos):
-            if score >= button["cost"]:
-                score -= button["cost"]
 
-                if button["action"] == "damage":
-                    damage += 1
-                    button["cost"] += 50
-                
-                if button["action"] == "speed":
-                    player.speed += 0.2
-                    button["cost"] += 50
 #Main loop
 create_vignette(vignette)
 wave_in_progress = False
@@ -104,19 +87,29 @@ while running:
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 running = False
-            if event.key == pygame.K_RETURN and game_state == "SHOP":
-                state_change.play()
-                game_state = "PLAY"
-                wave_in_progress = False
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
-                if game_state == "PLAY":
+                if game_state == "PLAY" and player.shoot_timer >= player.shoot_delay:
                     mouse_x, mouse_y = pygame.mouse.get_pos()
-                    bullets.append(Bullet(player.pos.x, player.pos.y, mouse_x, mouse_y))
-                elif game_state == "SHOP":
-                    handle_shop_click(pygame.mouse.get_pos())
-    
+                    player.shoot(bullets, mouse_x, mouse_y)
+                    player.shoot_timer = 0
+                    
+        if game_state == "UPGRADING":
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_1:
+                    if player.path_choice is None:
+                        apply_upgrade(player, "A")
+                elif event.key == pygame.K_2:
+                    if player.path_choice is None:
+                        apply_upgrade(player, "B")
+                elif event.key == pygame.K_RETURN:
+                    game_state = "PLAY"
+                    wave += 1
+                    wave_in_progress = False
+                    wave_timer = 0 
+
+
     if game_state == "PLAY":
         if not wave_in_progress:
             wave_timer += 1
@@ -124,7 +117,7 @@ while running:
                 wave_score += wave * 50
                 popups.append(Popup(WIDTH//2 - 36, HEIGHT-500, f"ROUND: {wave}"))
                 popups.append(Popup(WIDTH//2 - 36, HEIGHT-450, f"+ {wave_score}"))
-                score += wave_score
+                player.score += wave_score
                 enemies = spawn_wave(wave)
                 wave_in_progress = True
                 wave_timer = 0
@@ -136,7 +129,7 @@ while running:
         
 #------Bullets------
         for bullet in bullets:
-            bullet.update()
+            bullet.update(enemies)
 
 #------Popups------
         for popup in popups:
@@ -170,7 +163,7 @@ while running:
                         new_enemies.append(Enemy(enemy.pos.x, enemy.pos.y, new_type))
                         popups.append(Popup(enemy.pos.x, enemy.pos.y, "+1"))
                     else:
-                        score += 1
+                        player.score += 1
                         popups.append(Popup(enemy.pos.x, enemy.pos.y, "+1"))
                     hit = True
                     break
@@ -202,32 +195,12 @@ while running:
         
         particles = [p for p in particles if not p.is_dead()]
 
-#------Game states------
-        if game_state == "PLAY":
-            if wave_in_progress and len(enemies) == 0 and not going_to_shop:
-                going_to_shop = True
-                shop_timer = 0
+#------game states------
+    if len(enemies) == 0 and wave_in_progress and game_state == "PLAY":
+        wave_in_progress = False
+        game_state = "UPGRADING"
+        wave_timer += 1
 
-    if going_to_shop:
-        shop_timer += 1
-
-        for particle in particles:
-            particle.update()
-        particles = [p for p in particles if not p.is_dead()]
-        
-        for popup in popups:
-            popup.update()
-        popups = [p for p in popups if not p.is_dead()]
-
-        if shop_timer >= shop_delay:
-            state_change.play()
-            game_state = "SHOP"
-            going_to_shop = False
-            wave_in_progress = False
-            wave += 1
-
-    elif game_state == "SHOP":
-        pass
 
 #------Camera------
     offset_x = random.uniform(-shake_strength, shake_strength)
@@ -237,48 +210,48 @@ while running:
 
 #------Drawing------
     screen.fill((30,30,30))
-    if game_state == "PLAY":
 
+    if game_state == "PLAY":
         player.draw(screen, offset_x, offset_y)
         for bullet in bullets:
             bullet.draw(screen, offset_x, offset_y)
-        
         for particle in particles:
             particle.draw(screen, offset_x, offset_y)
-
         for enemy in enemies:
             enemy.draw(screen, offset_x, offset_y)
-    
         for popup in popups:
             popup.draw(screen)
 
-    elif game_state == "SHOP":
-        mouse_pos = pygame.mouse.get_pos()
-        screen.fill((30,75,30))
+#------Upgrading------
+    elif game_state == "UPGRADING":
+        screen.fill((30, 75, 30))
+        screen.blit(font.render("Upgrades  -  ENTER to continue", True, (255,255,255)), (200, 130))
 
-        title = font.render("SHOP - PRESS ENTER TO CONTINUE", True, (255,255,255))
-        screen.blit(title, (250, 50))
+        for i, path_key in enumerate(["A", "B"]):
+            x = 100 + i * 300
+            tier = player.path_tiers[path_key]
+            path = paths[path_key]
 
-        for button in shop_buttons:
+            for j, upgrade in enumerate(path):
+                y = 220 + j * 80
+                bought = j < tier
+                affordable = score >= upgrade["cost"]
 
-            if button["rect"].collidepoint(mouse_pos):
-                colour = (80,80,80)
-            else:
-                colour = (40,40,40)
-            
-            if score < button["cost"]:
-                colour = (25,25,25)
-
-            pygame.draw.rect(screen, (40,40,40), button["rect"], border_radius=8)
-            pygame.draw.rect(screen, (200,200,200), button["rect"], 2, border_radius=8)
-
-            text = font.render(f"{button['text']} (${button['cost']})", True, (255,255,255))
-            screen.blit(text, (button["rect"].x + 10, button["rect"].y + 15))
-        
+                if bought:
+                    colour = (100, 220, 100)
+                    label = f"[OWNED] {upgrade["name"]}"
+                elif affordable:
+                    colour = (200,200,200)
+                    label = f"[{i+1}] {upgrade["name"]}  ${upgrade["cost"]}"
+                else:
+                    colour = (100,100,100)
+                    label = f"{upgrade["name"]}  ${upgrade["cost"]}"
+                
+                screen.blit(font.render(label, True, colour), (x,y))
 
 #------Cash board------
 
-    display_score += (score - display_score) * 0.1
+    display_score += (player.score - display_score) * 0.1
     score_scale += (1 - score_scale) * 0.1
 
     board_width = 180
