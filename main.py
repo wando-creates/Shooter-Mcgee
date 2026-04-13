@@ -20,10 +20,12 @@ vignette = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
 font = pygame.font.Font("fonts/LuckiestGuy-Regular.ttf", 28)
 
 pop_sound = pygame.mixer.Sound("sounds/popping.mp3")
-pop_sound.set_volume(0.5)
+pop_sound.set_volume(0.2)
 
 state_change = pygame.mixer.Sound("sounds/state_change.mp3")
-state_change.set_volume(0.8)
+
+soundtrack = pygame.mixer.Sound("sounds/Soundtrack.mp3")
+soundtrack.set_volume(0.3)
 
 player = Player(WIDTH//2, HEIGHT//2)
 game_state = "PLAY"
@@ -77,6 +79,7 @@ def spawn_wave(wave):
 
 #Main loop
 create_vignette(vignette)
+soundtrack.play(-1)
 wave_in_progress = False
 running = True
 while running:
@@ -94,7 +97,7 @@ while running:
                     mouse_x, mouse_y = pygame.mouse.get_pos()
                     player.shoot(bullets, mouse_x, mouse_y)
                     player.shoot_timer = 0
-                    
+
         if game_state == "UPGRADING":
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_1:
@@ -104,6 +107,7 @@ while running:
                     if player.path_choice is None:
                         apply_upgrade(player, "B")
                 elif event.key == pygame.K_RETURN:
+                    state_change.play()
                     game_state = "PLAY"
                     wave += 1
                     wave_in_progress = False
@@ -197,6 +201,7 @@ while running:
 
 #------game states------
     if len(enemies) == 0 and wave_in_progress and game_state == "PLAY":
+        state_change.play()
         wave_in_progress = False
         game_state = "UPGRADING"
         wave_timer += 1
