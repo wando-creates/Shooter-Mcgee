@@ -14,14 +14,25 @@ class Bullet:
         self.speed = 10
         self.velocity = direction * self.speed
 
-        self.radius = 2
-        self.colour = (255,200,0)
+        self.angle = math.atan2(direction.y, direction.x)
 
     def update(self):
         self.pos += self.velocity
     
     def draw(self, screen, offset_x=0, offset_y=0):
-        pygame.draw.circle(screen, self.colour, (int(self.pos.x + offset_x), int(self.pos.y + offset_y)), self.radius)
+        length = 12
+        width = 4
+
+        tip = (self.pos.x + math.cos(self.angle) * length + offset_x,
+               self.pos.y + math.sin(self.angle) * length + offset_y)
+        back = (self.pos.x - math.cos(self.angle) * length * 0.5 + offset_x,
+                self.pos.y - math.sin(self.angle) * length * 0.5 + offset_y)
+        left = (back[0] + math.cos(self.angle + math.pi/2) * width,
+                back[1] + math.sin(self.angle + math.pi/2) * width)
+        right = (back[0] + math.cos(self.angle - math.pi/2) * width,
+                 back[1] + math.cos(self.angle - math.pi/2) * width)
+
+        pygame.draw.polygon(screen, (255,220,100), [tip,left,right])
 
     def hit_wall(self, width, height):
         return (self.pos.x <= 0 or self.pos.x >= width or

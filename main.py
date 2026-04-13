@@ -8,6 +8,7 @@ from particles import Collision
 from popups import Popup
 
 pygame.init()
+pygame.mixer.init()
 
 clock = pygame.time.Clock()
 FPS = 60
@@ -17,6 +18,12 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Shooter Mcgee")
 vignette = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
 font = pygame.font.Font("fonts/LuckiestGuy-Regular.ttf", 28)
+
+pop_sound = pygame.mixer.Sound("sounds/popping.mp3")
+pop_sound.set_volume(0.5)
+
+state_change = pygame.mixer.Sound("sounds/state_change.mp3")
+state_change.set_volume(0.8)
 
 player = Player(WIDTH//2, HEIGHT//2)
 game_state = "PLAY"
@@ -58,13 +65,16 @@ def create_vignette(surface):
 
 def spawn_wave(wave):
     new_enemies = []
+    types = ["red", "blue", "green", "yellow", "pink"]
 
     for _ in range(wave * 3):
         x = random.choice([0, WIDTH])
         y = random.randint (0, HEIGHT)
 
-        health = random.randint(1, min(3, wave))
-        new_enemies.append(Enemy(x, y, health))
+        max_index = min(len(types)-1, wave // 2)
+        bloon_type = random.choice(types[:max_index+1])
+        new_enemies.append(Enemy(x,y,bloon_type))
+
     return new_enemies
 
 def handle_shop_click(pos):
@@ -95,8 +105,8 @@ while running:
             if event.key == pygame.K_ESCAPE:
                 running = False
             if event.key == pygame.K_RETURN and game_state == "SHOP":
+                state_change.play()
                 game_state = "PLAY"
-                wave += 1
                 wave_in_progress = False
 
         if event.type == pygame.MOUSEBUTTONDOWN:
@@ -143,30 +153,32 @@ while running:
 
             for bullet in bullets:
                 if bullet.pos.distance_to(enemy.pos) < enemy.radius:
-                    enemy.health -= damage
-                    bullets.remove(bullet)
-                    if enemy.health >=1:
-                        score += 1
-                        popups.append(Popup(enemy.pos.x, enemy.pos.y, "+1"))
-
+                    pop_sound.play()
+                    shake_strength = 6
                     for _ in range(8):
                         particles.append(Collision(enemy.pos.x, enemy.pos.y))
 
-                    if enemy.health <= 0:
-                        shake_strength = 8
-                        for _ in range(12): 
-                            particles.append(Collision(enemy.pos.x, enemy.pos.y))
+                    downgrade = {
+                        "pink":"yellow",
+                        "yellow":"green",
+                        "green":"blue",
+                        "blue":"red",
+                    }
 
+                    if enemy.type in downgrade:
+                        new_type = downgrade[enemy.type]
+                        new_enemies.append(Enemy(enemy.pos.x, enemy.pos.y, new_type))
                         popups.append(Popup(enemy.pos.x, enemy.pos.y, "+1"))
+                    else:
                         score += 1
-                        score_scale = 1.5
-
-                        hit = True
+                        popups.append(Popup(enemy.pos.x, enemy.pos.y, "+1"))
+                    hit = True
                     break
-            
+                
             if not hit:
                 new_enemies.append(enemy)
 
+        enemies = new_enemies
         for bullet in bullets:
             hit_any = False
 
@@ -208,6 +220,7 @@ while running:
         popups = [p for p in popups if not p.is_dead()]
 
         if shop_timer >= shop_delay:
+            state_change.play()
             game_state = "SHOP"
             going_to_shop = False
             wave_in_progress = False

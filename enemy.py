@@ -2,12 +2,25 @@ import pygame
 import math
 import random
 
+BLOON_TYPES = {
+    "red": {"speed": 1.0, "health":1, "colour": (255,50,50)},
+    "blue": {"speed": 1.15, "health":2, "colour": (0,100,255)},
+    "green": {"speed": 1.3, "health":3, "colour": (0,255,100)},
+    "yellow": {"speed": 1.6, "health":4, "colour": (255,255,0)},
+    "pink": {"speed": 1.7, "health":5, "colour": (255,105,180)}
+}
+
 class Enemy:
-    def __init__(self, x, y, health=2):
+    def __init__(self, x, y, bloon_type="red"):
         self.pos = pygame.math.Vector2(x, y)
-        self.speed = 1
+        self.type = bloon_type
+
+        data = BLOON_TYPES[bloon_type]
+        self.speed = data["speed"]
+        self.health = data["health"]
+        self.colour = data["colour"]
+
         self.radius = 15
-        self.health = health
 
     def update(self, player_pos):
         direction = player_pos - self.pos
@@ -18,13 +31,5 @@ class Enemy:
         self.pos += direction * self.speed
     
     def draw(self, screen, offset_x=0, offset_y=0):
-        if self.health == 3:
-            colour = (0, 255, 100)
-        elif self.health == 2:
-            colour = (0,100,255)
-        elif self.health == 1:
-            colour = (255, 50, 50)
-        elif self.health <= 0:
-            return
+        pygame.draw.circle(screen, self.colour, (int(self.pos.x + offset_x), int(self.pos.y + offset_y)), self.radius)
         
-        pygame.draw.circle(screen, colour, (int(self.pos.x + offset_x), int(self.pos.y + offset_y)), self.radius)
