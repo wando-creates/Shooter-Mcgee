@@ -15,7 +15,7 @@ FPS = 60
 
 WIDTH, HEIGHT = 800, 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Shooter Mcgee")
+pygame.display.set_caption("Lost Light")
 vignette = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
 font = pygame.font.Font("fonts/LuckiestGuy-Regular.ttf", 28)
 
@@ -46,6 +46,8 @@ wave_score = 0
 score = 1
 score_scale = 1
 display_score = 0
+
+hit_flash = 0
 
 damage = 1
 
@@ -101,8 +103,8 @@ while running:
                 if skip_button.collidepoint(pygame.mouse.get_pos()):
                     auto_skip = not auto_skip
 
-        if game_state == "UPGRADING":
-            if event.type == pygame.KEYDOWN:
+        if event.type == pygame.KEYDOWN:
+            if game_state == "UPGRADING":
                 if event.key == pygame.K_1:
                     if player.path_choice is None:
                         apply_upgrade(player, "A")
@@ -115,7 +117,18 @@ while running:
                     wave += 1
                     wave_in_progress = False
                     wave_timer = 0 
+            elif game_state == "GAME_OVER":
+                if event.key == pygame.K_r:
+                    player = Player(WIDTH//2, HEIGHT//2)
+                    bullets.clear()
+                    enemies.clear()
+                    particles.clear()
+                    popups.clear()
 
+                    wave = 1
+                    player.score = 1
+                    game_state = "PLAY"
+                    wave_in_progress = False
 
     if game_state == "PLAY":
         if not wave_in_progress:
@@ -147,8 +160,15 @@ while running:
 #------Collisions------
         new_enemies = []
         new_bullets = []
-
+        
         for enemy in enemies:
+            if enemy.pos.distance_to(player.pos) < enemy.radius + player.size:
+                if player.damage_cooldown == 0:
+                    player.health -= 1
+                    player.damage_cooldown = 120
+                    shake_strength = 50
+                    hit_flash = 50
+
             hit = False
 
             for bullet in bullets:
@@ -214,7 +234,9 @@ while running:
             state_change.play()
         wave_timer += 1
 
-
+    if player.health <= 0:
+        game_state = "GAME_OVER"
+    
 #------Camera------
     offset_x = random.uniform(-shake_strength, shake_strength)
     offset_y = random.uniform(-shake_strength, shake_strength)
@@ -225,11 +247,21 @@ while running:
     screen.fill((30,30,30))
 
     if game_state == "PLAY":
+
+        if hit_flash > 0:
+            flash = pygame.Surface((WIDTH, HEIGHT))
+            flash.fill((64,0,0))
+            flash.set_alpha(int(hit_flash))
+            screen.blit(flash, (0,0))
+
         player.draw(screen, offset_x, offset_y)
         colour = (0,180,80) if auto_skip else(80,80,80)
         pygame.draw.rect(screen,colour,skip_button, border_radius=8)
         screen.blit(font.render("Auto Skip", True, (255,255,255)), (WIDTH -150, HEIGHT - 42))
+        heart = pygame.transform.scale(player.health_image, (32,32))
 
+        for i in range(player.health):
+            screen.blit(heart, (10 + i * 36, 115))
         for bullet in bullets:
             bullet.draw(screen, offset_x, offset_y)
         for particle in particles:
@@ -239,10 +271,17 @@ while running:
         for popup in popups:
             popup.draw(screen)
 
+    elif game_state == "GAME_OVER":
+        screen.fill((255,255,255))
+        screen.blit(font.render("GAME OVER", True, (64,0,0)), (290, 248))
+        screen.blit(font.render("Press R To Restart", True, (64,0,0)), (290, 288))
+
 #------Upgrading------
     elif game_state == "UPGRADING":
         screen.fill((64,0,0))
-        screen.blit(font.render("Upgrades  -  ENTER to continue", True, (255,255,255)), (200, 130))
+        screen.blit(font.render("Upgrades  -  ENTER to continue", True, (255,255,255)), (105, 130))
+        screen.blit(font.render("Press 1", True, (255,255,255)), (105, 180))
+        screen.blit(font.render("Press 2", True, (255,255,255)), (400, 180))
 
         for i, path_key in enumerate(["A", "B"]):
             x = 100 + i * 300
@@ -252,19 +291,24 @@ while running:
             for j, upgrade in enumerate(path):
                 y = 220 + j * 80
                 bought = j < tier
-                affordable = score >= upgrade["cost"]
+                affordable = player.score >= upgrade["cost"]
 
                 if bought:
-                    colour = (100, 220, 100)
+                    colour = (220,220,220)
                     label = f"[OWNED] {upgrade["name"]}"
                 elif affordable:
-                    colour = (200,200,200)
+                    colour = (50,200,50)
                     label = f"[{i+1}] {upgrade["name"]}  ${upgrade["cost"]}"
                 else:
                     colour = (100,100,100)
                     label = f"{upgrade["name"]}  ${upgrade["cost"]}"
                 
                 screen.blit(font.render(label, True, colour), (x,y))
+
+    if hit_flash > 0:
+        hit_flash *= 0.8
+        if hit_flash < 1:
+            hit_flash = 0
 
 #------Cash board------
 

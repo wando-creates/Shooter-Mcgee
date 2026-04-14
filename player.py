@@ -6,6 +6,7 @@ class Player:
     def __init__(self, x, y):
         self.pos = pygame.math.Vector2(x,y)
         self.speed = 4
+        self.health = 5
         self.colour = (0,150,200)
         self.size = 20
         self.score = 1
@@ -20,10 +21,13 @@ class Player:
 
         self.path_tiers = {"A": 0, "B": 0}
 
+        self.damage_cooldown = 0
+
         self.sprite_forward = pygame.image.load("sprites/ShooterMcGee_forward.png")
         self.sprite_backward = pygame.image.load("sprites/ShooterMcGee_backward.png")
         self.sprite_move = pygame.image.load("sprites/ShooterMcGee_shrink.png")
         self.sprite_move_backwards = pygame.image.load("sprites/ShooterMcGee_shrink_backwards.png")
+        self.health_image = pygame.image.load("sprites/heart.png")
 
         self.current_side_sprite = self.sprite_forward
         self.moving = False
@@ -45,6 +49,9 @@ class Player:
         keys = pygame.key.get_pressed()
         direction = pygame.math.Vector2(0,0)
 
+        if self.damage_cooldown > 0:
+            self.damage_cooldown -= 1
+            
         self.shoot_timer += 1
 
         if keys[pygame.K_w]:
