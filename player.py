@@ -20,6 +20,17 @@ class Player:
 
         self.path_tiers = {"A": 0, "B": 0}
 
+        self.sprite_forward = pygame.image.load("sprites/ShooterMcGee_forward.png")
+        self.sprite_backward = pygame.image.load("sprites/ShooterMcGee_backward.png")
+        self.sprite_move = pygame.image.load("sprites/ShooterMcGee_shrink.png")
+        self.sprite_move_backwards = pygame.image.load("sprites/ShooterMcGee_shrink_backwards.png")
+
+        self.current_side_sprite = self.sprite_forward
+        self.moving = False
+        self.sprite_swap_timer = 0
+        self.sprite_swap_rate = 12
+        self.show_move_sprite = False
+
     def shoot(self, bullets, mouse_x, mouse_y):
         base_angle = math.atan2(mouse_y - self.pos.y, mouse_x - self.pos.x)
         spread = 15
@@ -42,21 +53,33 @@ class Player:
             direction.y += 1
         if keys[pygame.K_a]:
             direction.x -= 1
+            self.current_side_sprite = self.sprite_backward
         if keys[pygame.K_d]:
             direction.x += 1
+            self.current_side_sprite = self.sprite_forward
 
         #Normalize
-        moving = False
+        self.moving = False
         if direction.length() > 0:
             direction = direction.normalize()
-            moving = True
+            self.moving = True
+
+        if self.moving:
+            self.sprite_swap_timer += 1
+            if self.sprite_swap_timer >= self.sprite_swap_rate:
+                self.sprite_swap_timer = 0
+                self.show_move_sprite = not self.show_move_sprite
+
+        else:
+            self.sprite_swap_timer = 0
+            self.show_move_sprite = False
 
         mouse_x, mouse_y = pygame.mouse.get_pos()
         self.angle = math.atan2(mouse_y - self.pos.y, mouse_x - self.pos.x)
-
         self.pos += direction * self.speed
-        if moving:
-            self.trail.append((self.pos.copy(), self.angle))
+
+        if self.moving:
+            self.trail.append((self.pos.copy(), self.angle, self.get_current_sprite()))
         else:
             if self.trail:
                 self.trail.pop(0)
@@ -64,31 +87,28 @@ class Player:
         if len(self.trail) > self.trail_length:
             self.trail.pop(0)
 
-    def draw(self, screen, offset_x=0, offset_y=0):
-        for i, (pos, angle) in enumerate(self.trail):
-            alpha = int(255 * (i / self.trail_length))
+    def get_current_sprite(self):
+        if self.current_side_sprite== self.sprite_forward:
+            return self.sprite_move if self.show_move_sprite else self.sprite_forward
+        elif self.current_side_sprite == self.sprite_backward:
+            return self.sprite_move_backwards if self.show_move_sprite else self.sprite_backward 
+        return self.current_side_sprite
 
-            trail_surface = pygame.Surface((self.size*6, self.size*6), pygame.SRCALPHA)
-            center = self.size * 1.5
-
-            tip = (center + math.cos(angle) * self.size + offset_x,
-                center + math.sin(angle) * self.size + offset_y)
-            left = (center + math.cos(angle + 2.5) * self.size + offset_x,
-                    center + math.sin(angle + 2.5) * self.size + offset_y)
-            right = (center + math.cos(angle - 2.5) * self.size + offset_x,
-                    center + math.sin(angle - 2.5) * self.size + offset_y)
-            
-            pygame.draw.polygon(trail_surface, (*self.colour, alpha), [tip, left, right])
-            screen.blit(trail_surface, (pos.x - center + offset_x, pos.y - center + offset_y))
         
-        angle = self.angle
+    def draw(self, screen, offset_x=0, offset_y=0):
+        for i, (pos, angle, sprite) in enumerate(self.trail):
+            alpha = int(180 * (i / max(self.trail_length, 1)))
 
-        tip = (self.pos.x + math.cos(angle) * self.size + offset_x,
-            self.pos.y + math.sin(angle) * self.size + offset_y)
-        left = (self.pos.x + math.cos(angle + 2.5) * self.size + offset_x,
-                self.pos.y + math.sin(angle + 2.5) * self.size + offset_y)
-        right = (self.pos.x + math.cos(angle - 2.5) * self.size + offset_x,
-                self.pos.y + math.sin(angle - 2.5) * self.size + offset_y)
+            trail_surface = pygame.Surface((self.size*3, self.size*3), pygame.SRCALPHA)
+            trail_surface.blit(sprite, (0,0))
+            trail_surface.set_alpha(alpha)
+            rect = trail_surface.get_rect(center=(int(pos.x + offset_x), int(pos.y + offset_y)))
+            screen.blit(trail_surface, rect)
+        
+        sprite = self.get_current_sprite()
+        if sprite is None:
+            sprite = self.current_side_sprite
 
-        pygame.draw.polygon(screen, self.colour, [tip, left, right])
+        sprite_rect = sprite.get_rect(center=(int(self.pos.x + offset_x), int(self.pos.y + offset_y)))
+        screen.blit(sprite, sprite_rect)
 

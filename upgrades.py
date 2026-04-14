@@ -1,10 +1,10 @@
 paths = {
         "A":[
-            {"name": "+1 Dart", "cost": 100, "multishot": 2, "homing": False, "shoot_delay": 30},
-            {"name": "+1 More Dart", "cost": 200,"multishot": 3, "homing": False, "shoot_delay": 30}],
+            {"name": "+1 Orb", "cost": 100, "multishot": 2, "homing": False, "shoot_delay": 30},
+            {"name": "+1 More Orb", "cost": 200,"multishot": 3, "homing": False, "shoot_delay": 30}],
         "B": [
             {"name": "Faster Shooting", "cost": 100, "multishot": 1, "homing": False, "shoot_delay": 15},
-            {"name": "Homing Darts", "cost": 200, "multishot": 1, "homing": True, "shoot_delay": 10}]
+            {"name": "Homing Orbs", "cost": 200, "multishot": 1, "homing": True, "shoot_delay": 10}]
 }
 
 def apply_upgrade(player, path_key):

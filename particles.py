@@ -14,7 +14,7 @@ class Collision:
         
         self.radius = random.randint(1,2)
         self.life = 30
-        self.colour = (255,200,50)
+        self.colour = (0,0,0)
     
     def update(self):
         self.pos += self.velocity

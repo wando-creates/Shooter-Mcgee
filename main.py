@@ -28,7 +28,10 @@ soundtrack = pygame.mixer.Sound("sounds/Soundtrack.mp3")
 soundtrack.set_volume(0.3)
 
 player = Player(WIDTH//2, HEIGHT//2)
+skip_button = pygame.Rect(WIDTH - 160, HEIGHT - 50, 150, 40)
+
 game_state = "PLAY"
+auto_skip = False
 
 bullets = []
 particles = []
@@ -44,9 +47,7 @@ score = 1
 score_scale = 1
 display_score = 0
 
-
 damage = 1
-
 
 def create_vignette(surface):
     width, height = surface.get_size()
@@ -97,6 +98,8 @@ while running:
                     mouse_x, mouse_y = pygame.mouse.get_pos()
                     player.shoot(bullets, mouse_x, mouse_y)
                     player.shoot_timer = 0
+                if skip_button.collidepoint(pygame.mouse.get_pos()):
+                    auto_skip = not auto_skip
 
         if game_state == "UPGRADING":
             if event.type == pygame.KEYDOWN:
@@ -201,9 +204,14 @@ while running:
 
 #------game states------
     if len(enemies) == 0 and wave_in_progress and game_state == "PLAY":
-        state_change.play()
         wave_in_progress = False
-        game_state = "UPGRADING"
+        if auto_skip:
+            wave += 1
+            wave_in_progress = False
+            wave_timer = 0
+        else:
+            game_state = "UPGRADING"
+            state_change.play()
         wave_timer += 1
 
 
@@ -218,6 +226,10 @@ while running:
 
     if game_state == "PLAY":
         player.draw(screen, offset_x, offset_y)
+        colour = (0,180,80) if auto_skip else(80,80,80)
+        pygame.draw.rect(screen,colour,skip_button, border_radius=8)
+        screen.blit(font.render("Auto Skip", True, (255,255,255)), (WIDTH -150, HEIGHT - 42))
+
         for bullet in bullets:
             bullet.draw(screen, offset_x, offset_y)
         for particle in particles:
@@ -229,7 +241,7 @@ while running:
 
 #------Upgrading------
     elif game_state == "UPGRADING":
-        screen.fill((30, 75, 30))
+        screen.fill((64,0,0))
         screen.blit(font.render("Upgrades  -  ENTER to continue", True, (255,255,255)), (200, 130))
 
         for i, path_key in enumerate(["A", "B"]):
@@ -275,7 +287,10 @@ while running:
     score_text = font.render(f"Cash: {int(display_score)}", True, (200,200,200))
     scaled_text = pygame.transform.scale(score_text, (int(score_text.get_width() * score_scale), int(score_text.get_height() * score_scale)))
 
+    round_text = font.render(f"Round: {int(wave)}", True, (200,200,200))
+
     screen.blit(scaled_text, (10,10))
+    screen.blit(round_text, (10,45))
 
     shake_strength *= 0.9
     pygame.display.flip()

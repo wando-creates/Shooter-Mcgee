@@ -3,11 +3,11 @@ import math
 import random
 
 BLOON_TYPES = {
-    "red": {"speed": 1.0, "health":1, "colour": (255,50,50)},
-    "blue": {"speed": 1.15, "health":2, "colour": (0,100,255)},
-    "green": {"speed": 1.3, "health":3, "colour": (0,255,100)},
-    "yellow": {"speed": 1.6, "health":4, "colour": (255,255,0)},
-    "pink": {"speed": 1.7, "health":5, "colour": (255,105,180)}
+    "red": {"speed": 1.0, "health":1, "colour": (120,20,20)},
+    "blue": {"speed": 1.15, "health":2, "colour": (0,50,120)},
+    "green": {"speed": 1.3, "health":3, "colour": (0,120,50)},
+    "yellow": {"speed": 1.6, "health":4, "colour": (120,120,0)},
+    "pink": {"speed": 1.7, "health":5, "colour": (120,52,90)}
 }
 
 class Enemy:

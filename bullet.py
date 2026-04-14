@@ -48,7 +48,8 @@ class Bullet:
         right = (back[0] + math.cos(self.angle - math.pi/2) * width,
                  back[1] + math.cos(self.angle - math.pi/2) * width)
 
-        pygame.draw.polygon(screen, (255,220,100), [tip,left,right])
+        pygame.draw.polygon(screen, (0,0,0), [tip,left,right])
+        pygame.draw.polygon(screen, (255,255,255), [tip,left,right], 2)
 
     def hit_wall(self, width, height):
         return (self.pos.x <= 0 or self.pos.x >= width or
