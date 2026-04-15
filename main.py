@@ -18,6 +18,7 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Lost Light")
 vignette = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
 font = pygame.font.Font("fonts/LuckiestGuy-Regular.ttf", 28)
+title_font = pygame.font.Font("fonts/LuckiestGuy-Regular.ttf", 64)
 
 pop_sound = pygame.mixer.Sound("sounds/popping.mp3")
 pop_sound.set_volume(0.2)
@@ -27,10 +28,12 @@ state_change = pygame.mixer.Sound("sounds/state_change.mp3")
 soundtrack = pygame.mixer.Sound("sounds/Soundtrack.mp3")
 soundtrack.set_volume(0.3)
 
+upgrade_sound = pygame.mixer.Sound("sounds/upgrade.mp3")
+
 player = Player(WIDTH//2, HEIGHT//2)
 skip_button = pygame.Rect(WIDTH - 160, HEIGHT - 50, 150, 40)
 
-game_state = "PLAY"
+game_state = "START"
 auto_skip = False
 
 bullets = []
@@ -86,6 +89,7 @@ soundtrack.play(-1)
 wave_in_progress = False
 running = True
 while running:
+    menu_timer = pygame.time.get_ticks()
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -104,13 +108,18 @@ while running:
                     auto_skip = not auto_skip
 
         if event.type == pygame.KEYDOWN:
-            if game_state == "UPGRADING":
+            if game_state == "START":
+                if event.key == pygame.K_RETURN:
+                    game_state = "PLAY"
+            elif game_state == "UPGRADING":
                 if event.key == pygame.K_1:
                     if player.path_choice is None:
                         apply_upgrade(player, "A")
+                        upgrade_sound.play()
                 elif event.key == pygame.K_2:
                     if player.path_choice is None:
                         apply_upgrade(player, "B")
+                        upgrade_sound.play()
                 elif event.key == pygame.K_RETURN:
                     state_change.play()
                     game_state = "PLAY"
@@ -176,7 +185,7 @@ while running:
                     pop_sound.play()
                     shake_strength = 6
                     for _ in range(8):
-                        particles.append(Collision(enemy.pos.x, enemy.pos.y))
+                        particles.append(Collision(enemy.pos.x, enemy.pos.y, enemy.colour))
 
                     downgrade = {
                         "pink":"yellow",
@@ -208,7 +217,7 @@ while running:
                     break
             if bullet.hit_wall(WIDTH, HEIGHT):
                 for _ in range(10):
-                    particles.append(Collision(bullet.pos.x, bullet.pos.y))
+                    particles.append(Collision(bullet.pos.x, bullet.pos.y, (0,0,0)))
                 hit_any = True
             if not hit_any:
                 new_bullets.append(bullet)
@@ -271,15 +280,10 @@ while running:
         for popup in popups:
             popup.draw(screen)
 
-    elif game_state == "GAME_OVER":
-        screen.fill((255,255,255))
-        screen.blit(font.render("GAME OVER", True, (64,0,0)), (290, 248))
-        screen.blit(font.render("Press R To Restart", True, (64,0,0)), (290, 288))
-
 #------Upgrading------
     elif game_state == "UPGRADING":
         screen.fill((64,0,0))
-        screen.blit(font.render("Upgrades  -  ENTER to continue", True, (255,255,255)), (105, 130))
+        screen.blit(font.render("Upgrades  -  ENTER to continue", True, (255,255,255)), (105, 120))
         screen.blit(font.render("Press 1", True, (255,255,255)), (105, 180))
         screen.blit(font.render("Press 2", True, (255,255,255)), (400, 180))
 
@@ -295,10 +299,10 @@ while running:
 
                 if bought:
                     colour = (220,220,220)
-                    label = f"[OWNED] {upgrade["name"]}"
+                    label = f"OWNED {upgrade["name"]}"
                 elif affordable:
                     colour = (50,200,50)
-                    label = f"[{i+1}] {upgrade["name"]}  ${upgrade["cost"]}"
+                    label = f"{i+1}: {upgrade["name"]}  ${upgrade["cost"]}"
                 else:
                     colour = (100,100,100)
                     label = f"{upgrade["name"]}  ${upgrade["cost"]}"
@@ -337,6 +341,23 @@ while running:
     screen.blit(round_text, (10,45))
 
     shake_strength *= 0.9
+
+    if game_state == "START":
+        screen.fill((20,20,30))
+        alpha = 150 + int(100 * math.sin(menu_timer * 0.003))
+        bg = 20 + int(10 * math.sin(menu_timer * -0.003))
+        screen.fill((bg,bg,bg))
+
+        title = title_font.render("Lost Light", True, (alpha,alpha,alpha))
+        subtitle = font.render("Press ENTER To Start", True, (64,0,0))
+
+        screen.blit(title, (WIDTH//2 - title.get_width()//2, 180))
+        screen.blit(subtitle, (WIDTH//2 - subtitle.get_width()//2, 280))
+    elif game_state == "GAME_OVER":
+        screen.fill((255,255,255))
+        screen.blit(font.render("GAME OVER", True, (64,0,0)), (290, 248))
+        screen.blit(font.render("Press R To Restart", True, (64,0,0)), (290, 288))
+
     pygame.display.flip()
     clock.tick(FPS)
 pygame.quit()

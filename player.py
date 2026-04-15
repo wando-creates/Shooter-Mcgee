@@ -37,7 +37,7 @@ class Player:
 
     def shoot(self, bullets, mouse_x, mouse_y):
         base_angle = math.atan2(mouse_y - self.pos.y, mouse_x - self.pos.x)
-        spread = 15
+        spread = 30
         for i in range(self.multishot):
             offset = (i - (self.multishot -1) / 2) * spread
             rad = base_angle + math.radians(offset)

@@ -1,9 +1,10 @@
 import pygame
 import random
 import math
+from enemy import BLOON_TYPES, Enemy
 
 class Collision:
-    def __init__(self, x, y):
+    def __init__(self, x, y, colour):
         self.pos = pygame.math.Vector2(x,y)
 
         angle = random.uniform(0, 6.28)
@@ -14,7 +15,7 @@ class Collision:
         
         self.radius = random.randint(1,2)
         self.life = 30
-        self.colour = (0,0,0)
+        self.colour = colour
     
     def update(self):
         self.pos += self.velocity
