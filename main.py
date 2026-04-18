@@ -2,7 +2,7 @@ import pygame
 import random
 import math
 from player import Player
-from enemy import Enemy
+from enemy import Enemy, Boss
 from bullet import Bullet
 from particles import Collision
 from popups import Popup
@@ -36,6 +36,7 @@ skip_button = pygame.Rect(WIDTH - 160, HEIGHT - 50, 150, 40)
 
 game_state = "START"
 auto_skip = False
+boss_unlocked = False
 
 bullets = []
 particles = []
@@ -58,6 +59,7 @@ spawn_delay = 20
 hit_flash = 0
 
 damage = 1
+boss = None
 
 def create_vignette(surface, player_pos):
     surface.fill((100,100,100,220))
@@ -150,6 +152,7 @@ while running:
     if game_state == "PLAY":
         if not wave_in_progress:
             wave_timer += 1
+
             if wave_timer >= wave_delay:
                 wave_score += wave * 20
                 popups.append(Popup(WIDTH//2 - 36, HEIGHT-500, f"ROUND: {wave}"))
@@ -162,6 +165,11 @@ while running:
                 wave_in_progress = True
                 wave_timer = 0
 
+                if wave == 2:
+                    boss = Boss(0, HEIGHT // 2)
+                if boss_unlocked and random.random() < 0.2:
+                    boss = Boss(random.choice([0,WIDTH]), random.randint(100, HEIGHT - 100))
+
         player.update()
 #------Enemy------
         for enemy in enemies:
@@ -169,7 +177,8 @@ while running:
         
 #------Bullets------
         for bullet in bullets:
-            bullet.update(enemies)
+            all_targets = enemies + ([boss] if boss else [])
+            bullet.update(all_targets)
 
 #------Popups------
         for popup in popups:
@@ -219,6 +228,7 @@ while running:
                 new_enemies.append(enemy)
 
         enemies = new_enemies if new_enemies else enemies
+
         for bullet in bullets:
             hit_any = False
 
@@ -235,7 +245,34 @@ while running:
         
         bullets = new_bullets
         enemies = new_enemies
-    
+
+        if boss:
+            boss.update(player.pos)
+
+            for bullet in bullets[:]:
+                if bullet.pos.distance_to(boss.pos) < boss.radius:
+                    boss.health -= 1
+                    bullets.remove(bullet)
+                    pop_sound.play()
+                    shake_strength = 6
+                    for _ in range(6):
+                        particles.append(Collision(boss.pos.x, boss.pos.y, boss.colour))
+                    if boss.health <= 0:
+                        boss_unlocked = True
+                        player.score += 100
+                        popups.append(Popup(boss.pos.x, boss.pos.y, "+100"))
+                        boss = None
+                        shake_strength = 30
+                    break
+        
+        if boss and boss.pos.distance_to(player.pos)< boss.radius + player.size:
+            if player.damage_cooldown == 0:
+                player.health -= 1
+                player.damage_cooldown = 120
+                shake_strength = 50
+                hit_flash = 50
+        
+                
 #------Particles------
         for particle in particles:
             particle.update()
@@ -243,7 +280,7 @@ while running:
         particles = [p for p in particles if not p.is_dead()]
 
 #------game states------
-    if len(enemies) == 0 and len(spawn_queue) == 0 and wave_in_progress and game_state == "PLAY":
+    if len(enemies) == 0 and len(spawn_queue) == 0 and wave_in_progress and game_state == "PLAY" and not boss:
         wave_in_progress = False
         if auto_skip:
             wave += 1
@@ -273,6 +310,9 @@ while running:
     menu_timer = pygame.time.get_ticks()
 
     if game_state == "PLAY":
+
+        if boss:
+            boss.draw(screen, offset_x, offset_y)
 
         if spawn_queue:
             spawn_timer += 1
