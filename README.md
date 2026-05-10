@@ -13,4 +13,6 @@ Open the newly download file and locate 'main.py'.
 
 Open your chosen IDE and now run this file.
 
+No generative AI has been used in this project
+
 
