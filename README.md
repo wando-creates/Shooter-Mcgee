@@ -1,18 +1,23 @@
-How to download and play:
+Lost Light
 
-Make sure you have python downloaded.
-  Run the code 'python --version' in your terminal,
-  If the terminal tells you 'python [version_number]' its downloaded
-  otherwise you need to download Python. 
+Lost Light is a 2D survival shooter made using python/pygame.
 
-Download my game Lost Light from my itch.io page (wando-creates).
-Go to your downloads file and locate the zip file 'lost_light.zip'.
-Double click on the folder and this should open up a compressed folder with all of my game files.
-Now extract all the files - save it to an easy to access area.
-Open the newly download file and locate 'main.py'.
+About
 
-Open your chosen IDE and now run this file.
+There are waves of colours trying to invade your darkness. Fight enemies, gain cash, get upgrades, survive as long as possible.
 
-No generative AI has been used in this project
+Controls
 
+WASD - move
+Mouse - Aim 
+Left Click - shoot
+
+How To Play
+Run from source:
+pip install pygame
+python main.py
+
+Run the executable:
+download the release and run:
+./main
 
